@@ -42,7 +42,7 @@ def check_updates():
 
     for chapter in chapters:
         manga = get_manga(chapter)
-        if manga is None:
+        if manga is None or manga['id'] not in manga_ids:
             continue
 
         for webhook in webhooks:
