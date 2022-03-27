@@ -1,18 +1,20 @@
 '''
 Main file that makes requests to mangadex API and sends embeds to webhook
 '''
-import sheet
-import requests
 import time
-import json
 from datetime import datetime, timedelta
+from urllib.error import HTTPError
+
+import requests
 from discord_webhook import DiscordWebhook, DiscordEmbed
+
+import sheet
 
 # Important URLs
 API_URL = 'https://api.mangadex.org/'
 
 # Time between each check (in hours)
-INTERVAL = 12
+INTERVAL = 1
 UTC_OFFSET = 11
 
 
@@ -20,82 +22,68 @@ def check_updates():
     '''
     Get and send all manga updates
     '''
+    # Read data from google sheets
+    manga_ids = sheet.get_whitelist()
+    webhooks = sheet.get_webhooks()
+
     # Determine time of last check
-    last_check = datetime.now() - timedelta(hours=INTERVAL)
-    query_updatedAtSince = last_check.strftime("%Y-%m-%dT%H:%M:%S")
+    last_check = datetime.now() - timedelta(hours=INTERVAL + UTC_OFFSET)
 
-    # Set parameters for manga search query
-    query_params = {
-        # 'limit': 100,
-        'updatedAtSince': query_updatedAtSince,
-        # 'availableTranslatedLanguage[0]': 'en'
-    }
-
-    # Get list of manga IDs from Google Sheet
-    # ids = sheet.get_whitelist()
-    # for i in range(len(ids)):
-    #   query_params[f"ids[{i}]"] = ids[i]
-    
+    # Get all English chapters updated since last check
     try:
-        mangas = requests.get(f'{API_URL}manga', params=query_params).json()['data']
-    except Exception as error:
-        print('Could not get manga:', error)
+        response = requests.get(f'{API_URL}chapter', params={
+            'updatedAtSince': last_check.strftime("%Y-%m-%dT%H:%M:%S"),
+            'translatedLanguage[0]': 'en'
+        })
+    except HTTPError as error:
+        print('Could not get chapters:', error)
         return
 
-    with open('list.json', 'w') as f:
-        json.dump(mangas, f, indent=4)
+    chapters = response.json()['data']
 
-    for manga in mangas:
-        # Get all English chapters updated since last check
-        try:
-            chapters = requests.get(f'{API_URL}chapter', params={
-                'manga': manga['id'],
-                'updatedAtSince': query_updatedAtSince,
-                'translatedLanguage[0]': 'en'
-            }).json()['data']
-        except Exception as error:
-            print('Could not get chapters:', error)
-            return
+    for chapter in chapters:
+        manga = get_manga(chapter)
+        if manga is None or manga['id'] not in manga_ids:
+            continue
 
-        if len(chapters) == 0:
-            print(f"No chapters for {manga['id']}")
-
-        for chapter in chapters:
-            send_webhooks(manga, chapter)
+        for webhook in webhooks:
+            send_webhook(webhook, manga, chapter)
 
 
-def send_webhooks(manga, chapter):
+def send_webhook(webhook, manga, chapter):
     '''
-    Send a webhook for the given chapter to all webhooks listed in Google Sheet
+    Send an embed to the given webhook URL about the given chapter of manga
     '''
-    for webhook in sheet.get_webhooks():
-        # Get manga data
-        manga_url = 'https://mangadex.org/title/' + manga['id']
-        title = get_title(manga)
-        if title is None:
-            return
+    # Get manga data
+    manga_url = 'https://mangadex.org/title/' + manga['id']
+    title = get_title(manga)
+    if title is None:
+        return
+    cover_art_url = get_cover_url(manga)
 
-        # Get chapter data
-        chapter_url = 'https://mangadex.org/chapter/' + chapter['id']
-        description = get_description(chapter)
-        time_updated = datetime.strptime(chapter['attributes']['updatedAt'], '%Y-%m-%dT%H:%M:%S+00:00')
-        time_updated += timedelta(hours=11)
-        
-        # Send webhook to discord
-        webhook = DiscordWebhook(url=webhook, username='MangaDex')
-        embed = DiscordEmbed(
-            title= title,
-            url=manga_url,
-            description=f"[{description}]({chapter_url})",
-            color='f69220'
-        )
-        embed.set_timestamp(time_updated.timestamp())
-        webhook.add_embed(embed)
+    # Get chapter data
+    chapter_url = 'https://mangadex.org/chapter/' + chapter['id']
+    description = get_description(chapter)
+    time_updated = datetime.strptime(
+        chapter['attributes']['updatedAt'], '%Y-%m-%dT%H:%M:%S+00:00')
+    time_updated += timedelta(hours=UTC_OFFSET)
 
-        try:
-            webhook.execute()
-        except Exception as error:
-            print('Could not send webhook:', error)
+    # Send webhook to discord
+    webhook = DiscordWebhook(url=webhook, username='MangaDex')
+    embed = DiscordEmbed(
+        title=title,
+        url=manga_url,
+        description=f"[{description}]({chapter_url})",
+        color='f69220'
+    )
+    embed.set_thumbnail(url=cover_art_url)
+    embed.set_timestamp(time_updated.timestamp())
+    webhook.add_embed(embed)
+
+    try:
+        webhook.execute()
+    except HTTPError as error:
+        print('Could not send webhook:', error)
 
 
 def get_title(manga):
@@ -105,10 +93,11 @@ def get_title(manga):
     attributes = manga['attributes']
     if 'en' in attributes['title']:
         return attributes['title']['en']
-    elif 'en' in attributes['altTitles']:
+
+    if 'en' in attributes['altTitles']:
         return attributes['altTitles']['en']
-    else:
-        return None
+
+    return None
 
 
 def get_description(chapter):
@@ -120,12 +109,49 @@ def get_description(chapter):
     attributes = chapter['attributes']
     if attributes['volume']:
         return f"Volume {attributes['volume']}, Chapter {attributes['chapter']}"
-    elif attributes['chapter']:
+
+    if attributes['chapter']:
         return f"Chapter {attributes['chapter']}"
+
+    return "Oneshot"
+
+
+def get_manga(chapter):
+    '''
+    Get the manga attached to the given chapter
+    '''
+    for relationship in chapter['relationships']:
+        if relationship['type'] == 'manga':
+            break
     else:
-        return "Oneshot"
+        return None
+
+    try:
+        response = requests.get(f"{API_URL}manga/{relationship['id']}")
+        return response.json()['data']
+    except HTTPError as error:
+        print(error)
+        return None
 
 
+def get_cover_url(manga):
+    '''
+    Get the url for the cover art of the given manga
+    '''
+    for relationship in manga['relationships']:
+        if relationship['type'] == 'cover_art':
+            break
+    else:
+        return None
+
+    try:
+        response = requests.get(f"{API_URL}cover/{relationship['id']}")
+    except HTTPError as error:
+        print(error)
+        return None
+
+    cover = response.json()['data']['attributes']
+    return f"https://uploads.mangadex.org/covers/{manga['id']}/{cover['fileName']}"
 
 
 if __name__ == '__main__':
