@@ -86,14 +86,21 @@ def send_webhook(webhook, manga, chapter):
 
 def get_title(manga):
     '''
-    Search both title fields for English title. If None, return None.
+    Search both title fields for English/Romaji title. If None, return None.
     '''
     attributes = manga['attributes']
     if 'en' in attributes['title']:
         return attributes['title']['en']
 
+    if 'ja-ro' in attributes['title']:
+        return attributes['title']['ja-ro']
+
     if 'en' in attributes['altTitles']:
         return attributes['altTitles']['en']
+    
+    if 'ja-ro' in attributes['altTitles']:
+        return attributes['altTitles']['ja-ro']
+
 
     return None
 
