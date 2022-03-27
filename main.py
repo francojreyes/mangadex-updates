@@ -15,7 +15,6 @@ API_URL = 'https://api.mangadex.org/'
 
 # Time between each check (in hours)
 INTERVAL = 1
-UTC_OFFSET = 11
 
 
 def check_updates():
@@ -66,7 +65,6 @@ def send_webhook(webhook, manga, chapter):
     description = get_description(chapter)
     time_updated = datetime.strptime(
         chapter['attributes']['updatedAt'], '%Y-%m-%dT%H:%M:%S+00:00')
-    time_updated += timedelta(hours=UTC_OFFSET)
 
     # Send webhook to discord
     webhook = DiscordWebhook(url=webhook, username='MangaDex')
