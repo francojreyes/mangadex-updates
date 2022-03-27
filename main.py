@@ -27,7 +27,7 @@ def check_updates():
     webhooks = sheet.get_webhooks()
 
     # Determine time of last check
-    last_check = datetime.now() - timedelta(hours=INTERVAL + UTC_OFFSET)
+    last_check = datetime.now() - timedelta(hours=INTERVAL)
 
     # Get all English chapters updated since last check
     try:
@@ -43,7 +43,7 @@ def check_updates():
 
     for chapter in chapters:
         manga = get_manga(chapter)
-        if manga is None or manga['id'] not in manga_ids:
+        if manga is None:
             continue
 
         for webhook in webhooks:
