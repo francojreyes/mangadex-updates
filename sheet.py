@@ -23,7 +23,7 @@ def get_whitelist():
     '''
     sheet = client.open(SHEET)
     sheet_instance = sheet.get_worksheet(1)
-    return sheet_instance.col_values(2)
+    return sheet_instance.col_values(1)
 
 
 def get_webhooks():
