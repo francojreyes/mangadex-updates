@@ -24,9 +24,3 @@ def get_webhooks():
     sheet = client.open(SHEET)
     sheet_instance = sheet.get_worksheet(0)
     return sheet_instance.col_values(1)
-
-
-if __name__ == '__main__':
-    # print(get_whitelist())
-    # print(get_webhooks())
-    pass
