@@ -26,7 +26,7 @@ def check_updates():
     manga_ids = sheet.get_whitelist()
     webhooks = sheet.get_webhooks()
     # Determine time of last check
-    last_check = datetime.now() - timedelta(hours=INTERVAL)
+    last_check = datetime.now() - timedelta(hours=INTERVAL + 11)
     print("Checking since", last_check.strftime("%Y-%m-%dT%H:%M:%S"))
 
     # Get all English chapters updated since last check
@@ -55,16 +55,22 @@ def check_updates():
     
 
     for chapter in chapters:
+        # Ensure chapter is actually new
+        if not is_new(last_check, chapter):
+            print('No actual update for', chapter['id'])
+            continue
+
+        # Check if manga is in whitelist
         manga = get_manga(chapter)
         if manga is None:
             print('No manga found for', chapter['id'])
             continue
-        
         if manga['id'] not in manga_ids:
             print(get_title(manga), f"({manga['id']})", 'is not in list')
             continue
 
         for webhook in webhooks:
+            print('Sending webhook for', chapter['id'])
             send_webhook(webhook, manga, chapter)
 
 
@@ -80,10 +86,10 @@ def send_webhook(webhook, manga, chapter):
     cover_art_url = get_cover_url(manga)
 
     # Get chapter data
-    chapter_url = 
+    chapter_url = get_chapter_url(chapter)
     description = get_description(chapter)
     time_updated = datetime.strptime(
-        chapter['attributes']['createdAt'], '%Y-%m-%dT%H:%M:%S+00:00')
+        chapter['attributes']['readableAt'], '%Y-%m-%dT%H:%M:%S+00:00')
 
     # Send webhook to discord
     webhook = DiscordWebhook(url=webhook, username='MangaDex')
@@ -189,7 +195,9 @@ def get_chapter_url(chapter):
 
 
 def is_new(last_check, chapter):
-    readable_at = chapter['attributes']['readableAt']
+    last_updated = datetime.strptime(
+        chapter['attributes']['readableAt'], '%Y-%m-%dT%H:%M:%S+00:00')
+    return last_check < last_updated
 
 
 if __name__ == '__main__':
