@@ -79,13 +79,11 @@ def send_webhook(webhook, manga, chapter):
     # Get manga data
     manga_url = 'https://mangadex.org/title/' + manga['id']
     title = get_title(manga)
-    if title is None:
-        return
     cover_art_url = get_cover_url(manga)
 
     # Get chapter data
     chapter_url = get_chapter_url(chapter)
-    description = get_description(chapter)
+    description = generate_description(chapter)
     time_updated = datetime.strptime(
         chapter['attributes']['readableAt'], '%Y-%m-%dT%H:%M:%S+00:00')
 
@@ -109,26 +107,12 @@ def send_webhook(webhook, manga, chapter):
 
 def get_title(manga):
     '''
-    Search both title fields for English/Romaji title. If None, return None.
+    Return main title
     '''
-    attributes = manga['attributes']
-    if 'en' in attributes['title']:
-        return attributes['title']['en']
-
-    if 'ja-ro' in attributes['title']:
-        return attributes['title']['ja-ro']
-
-    if 'en' in attributes['altTitles']:
-        return attributes['altTitles']['en']
-    
-    if 'ja-ro' in attributes['altTitles']:
-        return attributes['altTitles']['ja-ro']
+    return manga['attributes']['title'].values()[0]
 
 
-    return None
-
-
-def get_description(chapter):
+def generate_description(chapter):
     '''
     Find volume and chapter numbers.
     If volume is none, return chapter only.
@@ -186,7 +170,7 @@ def get_chapter_url(chapter):
     '''
     Return external URL if exists, or mangadex url otherwise
     '''
-    if chapter['externalUrl'] is not None:
+    if chapter['externalUrl']:
         return chapter['externalUrl']
 
     return 'https://mangadex.org/chapter/' + chapter['id']
@@ -194,8 +178,8 @@ def get_chapter_url(chapter):
 
 def is_new(last_check, chapter):
     '''
-    Compare time updated against time posted (readableAt)
-    to determine if the update was the chapter being posted or not
+    Compare time posted (readableAt) against time of last check
+    to determine if the detected update was the chapter being posted or not
     '''
     last_updated = datetime.strptime(
         chapter['attributes']['readableAt'], '%Y-%m-%dT%H:%M:%S+00:00')
