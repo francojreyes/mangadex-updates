@@ -25,7 +25,7 @@ def check_updates():
     manga_ids = sheet.get_whitelist()
     webhooks = sheet.get_webhooks()
     # Determine time of last check
-    last_check = datetime.now() - timedelta(hours=INTERVAL + 11)
+    last_check = datetime.now() - timedelta(hours=INTERVAL)
     print("Checking since", last_check.strftime("%Y-%m-%dT%H:%M:%S"))
 
     # Get all English chapters updated since last check
@@ -34,7 +34,6 @@ def check_updates():
         'offset': 0,
         'updatedAtSince': last_check.strftime("%Y-%m-%dT%H:%M:%S"),
         'translatedLanguage[0]': 'en',
-        'order[updatedAt]': 'asc'
     }
     try:
         response = requests.get(f'{API_URL}chapter', params=query_params).json()
