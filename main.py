@@ -17,7 +17,6 @@ API_URL = 'https://api.mangadex.org/'
 # Time between each check (in hours)
 INTERVAL = 1
 
-
 def check_updates():
     '''
     Get and send all manga updates
@@ -33,9 +32,9 @@ def check_updates():
     query_params = {
         'limit': 100,
         'offset': 0,
-        'createdAtSince': last_check.strftime("%Y-%m-%dT%H:%M:%S"),
+        'updatedAtSince': last_check.strftime("%Y-%m-%dT%H:%M:%S"),
         'translatedLanguage[0]': 'en',
-        'order[createdAt]': 'asc'
+        'order[updatedAt]': 'asc'
     }
     try:
         response = requests.get(f'{API_URL}chapter', params=query_params).json()
@@ -195,6 +194,10 @@ def get_chapter_url(chapter):
 
 
 def is_new(last_check, chapter):
+    '''
+    Compare time updated against time posted (readableAt)
+    to determine if the update was the chapter being posted or not
+    '''
     last_updated = datetime.strptime(
         chapter['attributes']['readableAt'], '%Y-%m-%dT%H:%M:%S+00:00')
     return last_check < last_updated
