@@ -10,6 +10,8 @@ from discord_webhook import DiscordWebhook, DiscordEmbed
 
 import sheet
 
+import json
+
 # Important URLs
 API_URL = 'https://api.mangadex.org/'
 
@@ -24,25 +26,43 @@ def check_updates():
     # Read data from google sheets
     manga_ids = sheet.get_whitelist()
     webhooks = sheet.get_webhooks()
-
     # Determine time of last check
     last_check = datetime.now() - timedelta(hours=INTERVAL)
+    print("Checking since", last_check.strftime("%Y-%m-%dT%H:%M:%S"))
 
     # Get all English chapters updated since last check
+    query_params = {
+        'limit': 100,
+        'offset': 0,
+        'createdAtSince': last_check.strftime("%Y-%m-%dT%H:%M:%S"),
+        'translatedLanguage[0]': 'en',
+        'order[createdAt]': 'asc'
+    }
     try:
-        response = requests.get(f'{API_URL}chapter', params={
-            'updatedAtSince': last_check.strftime("%Y-%m-%dT%H:%M:%S"),
-            'translatedLanguage[0]': 'en'
-        })
+        response = requests.get(f'{API_URL}chapter', params=query_params).json()
     except HTTPError as error:
         print('Could not get chapters:', error)
         return
 
-    chapters = response.json()['data']
+    chapters = response['data']
+    while response['total'] > response['limit']:
+        query_params['offset'] += response['limit']
+        try:
+            response = requests.get(f'{API_URL}chapter', params=query_params).json()
+        except HTTPError as error:
+            print('Could not get chapters:', error)
+            return
+        chapters += response['data']
+    
 
     for chapter in chapters:
         manga = get_manga(chapter)
-        if manga is None or manga['id'] not in manga_ids:
+        if manga is None:
+            print('No manga found for', chapter['id'])
+            continue
+        
+        if manga['id'] not in manga_ids:
+            print(get_title(manga), f"({manga['id']})", 'is not in list')
             continue
 
         for webhook in webhooks:
@@ -64,7 +84,7 @@ def send_webhook(webhook, manga, chapter):
     chapter_url = 'https://mangadex.org/chapter/' + chapter['id']
     description = get_description(chapter)
     time_updated = datetime.strptime(
-        chapter['attributes']['updatedAt'], '%Y-%m-%dT%H:%M:%S+00:00')
+        chapter['attributes']['createdAt'], '%Y-%m-%dT%H:%M:%S+00:00')
 
     # Send webhook to discord
     webhook = DiscordWebhook(url=webhook, username='MangaDex')
