@@ -10,7 +10,6 @@ from discord_webhook import DiscordWebhook, DiscordEmbed
 
 import sheet
 
-import json
 
 # Important URLs
 API_URL = 'https://api.mangadex.org/'
@@ -81,7 +80,7 @@ def send_webhook(webhook, manga, chapter):
     cover_art_url = get_cover_url(manga)
 
     # Get chapter data
-    chapter_url = 'https://mangadex.org/chapter/' + chapter['id']
+    chapter_url = 
     description = get_description(chapter)
     time_updated = datetime.strptime(
         chapter['attributes']['createdAt'], '%Y-%m-%dT%H:%M:%S+00:00')
@@ -177,6 +176,20 @@ def get_cover_url(manga):
 
     cover = response.json()['data']['attributes']
     return f"https://uploads.mangadex.org/covers/{manga['id']}/{cover['fileName']}"
+
+
+def get_chapter_url(chapter):
+    '''
+    Return external URL if exists, or mangadex url otherwise
+    '''
+    if chapter['externalUrl'] is not None:
+        return chapter['externalUrl']
+
+    return 'https://mangadex.org/chapter/' + chapter['id']
+
+
+def is_new(last_check, chapter):
+    readable_at = chapter['attributes']['readableAt']
 
 
 if __name__ == '__main__':
