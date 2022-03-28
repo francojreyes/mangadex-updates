@@ -2,6 +2,7 @@
 Main file that makes requests to mangadex API and sends embeds to webhook
 '''
 import time
+import traceback
 from datetime import datetime, timedelta
 from urllib.error import HTTPError
 
@@ -37,8 +38,8 @@ def check_updates():
     }
     try:
         response = requests.get(f'{API_URL}chapter', params=query_params).json()
-    except HTTPError as error:
-        print('Could not get chapters:', error)
+    except HTTPError:
+        traceback.print_exc()
         return
 
     chapters = response['data']
@@ -46,8 +47,8 @@ def check_updates():
         query_params['offset'] += response['limit']
         try:
             response = requests.get(f'{API_URL}chapter', params=query_params).json()
-        except HTTPError as error:
-            print('Could not get chapters:', error)
+        except HTTPError:
+            traceback.print_exc()
             return
         chapters += response['data']
     
@@ -101,8 +102,8 @@ def send_webhook(webhook, manga, chapter):
 
     try:
         webhook.execute()
-    except HTTPError as error:
-        print('Could not send webhook:', error)
+    except HTTPError:
+        traceback.print_exc()
 
 
 def get_title(manga):
@@ -141,8 +142,8 @@ def get_manga(chapter):
     try:
         response = requests.get(f"{API_URL}manga/{relationship['id']}")
         return response.json()['data']
-    except HTTPError as error:
-        print(error)
+    except HTTPError:
+        traceback.print_exc()
         return None
 
 
@@ -158,8 +159,8 @@ def get_cover_url(manga):
 
     try:
         response = requests.get(f"{API_URL}cover/{relationship['id']}")
-    except HTTPError as error:
-        print(error)
+    except HTTPError:
+        traceback.print_exc()
         return None
 
     cover = response.json()['data']['attributes']
