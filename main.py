@@ -110,7 +110,7 @@ def get_title(manga):
     '''
     Return main title
     '''
-    return manga['attributes']['title'].values()[0]
+    return list(manga['attributes']['title'].values())[0]
 
 
 def generate_description(chapter):
