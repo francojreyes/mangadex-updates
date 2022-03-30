@@ -171,8 +171,8 @@ def get_chapter_url(chapter):
     '''
     Return external URL if exists, or mangadex url otherwise
     '''
-    if chapter['atrributes']['externalUrl']:
-        return chapter['atrributes']['externalUrl']
+    if chapter['attributes']['externalUrl']:
+        return chapter['attributes']['externalUrl']
 
     return 'https://mangadex.org/chapter/' + chapter['id']
 
