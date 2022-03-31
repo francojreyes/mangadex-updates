@@ -18,6 +18,7 @@ API_URL = 'https://api.mangadex.org/'
 # Time between each check (in hours)
 INTERVAL = 1
 
+
 def check_updates():
     '''
     Get and send all manga updates
@@ -37,7 +38,8 @@ def check_updates():
         'translatedLanguage[0]': 'en',
     }
     try:
-        response = requests.get(f'{API_URL}chapter', params=query_params).json()
+        response = requests.get(f'{API_URL}chapter',
+                                params=query_params).json()
     except HTTPError:
         traceback.print_exc()
         return
@@ -46,16 +48,16 @@ def check_updates():
     while response['total'] > response['limit']:
         query_params['offset'] += response['limit']
         try:
-            response = requests.get(f'{API_URL}chapter', params=query_params).json()
+            response = requests.get(
+                f'{API_URL}chapter', params=query_params).json()
         except HTTPError:
             traceback.print_exc()
             return
         chapters += response['data']
-    
 
     for chapter in chapters:
         # Ensure chapter is actually new
-        if not is_new(last_check, chapter):
+        if get_time_posted(chapter) < last_check:
             print('No actual update for', chapter['id'])
             continue
 
@@ -85,8 +87,7 @@ def send_webhook(webhook, manga, chapter):
     # Get chapter data
     chapter_url = get_chapter_url(chapter)
     description = generate_description(chapter)
-    time_updated = datetime.strptime(
-        chapter['attributes']['readableAt'], '%Y-%m-%dT%H:%M:%S+00:00')
+    time_posted = get_time_posted(chapter)
     og_image = get_og_image(chapter)
 
     # Send webhook to discord
@@ -98,7 +99,7 @@ def send_webhook(webhook, manga, chapter):
         color='f69220'
     )
     embed.set_image(url=og_image)
-    embed.set_timestamp(time_updated.timestamp())
+    embed.set_timestamp(time_posted.timestamp())
     webhook.add_embed(embed)
 
     try:
@@ -185,14 +186,12 @@ def get_chapter_url(chapter):
     return 'https://mangadex.org/chapter/' + chapter['id']
 
 
-def is_new(last_check, chapter):
+def get_time_posted(chapter):
     '''
-    Compare time posted (readableAt) against time of last check
-    to determine if the detected update was the chapter being posted or not
+    Return datetime object corresponding to time chapter was posted
     '''
-    last_updated = datetime.strptime(
+    return datetime.strptime(
         chapter['attributes']['readableAt'], '%Y-%m-%dT%H:%M:%S+00:00')
-    return last_check < last_updated
 
 
 if __name__ == '__main__':
