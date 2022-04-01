@@ -11,7 +11,8 @@ from dotenv import load_dotenv
 # defines
 SCOPE = ['https://spreadsheets.google.com/feeds',
          'https://www.googleapis.com/auth/drive']
-REGEX = r'\w{8}-\w{4}-\w{4}-\w{4}-\w{12}'
+REGEX = r'[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}'
+WEBHOOK_LINK = 'https://discord.com/api/webhooks/'
 
 # read credentials from environment
 load_dotenv()
@@ -35,30 +36,35 @@ creds = Credentials.from_service_account_info(
 # authorize the clientsheet
 client = gspread.authorize(creds)
 
+
 def get_sheets():
     '''
     Scan all sheets and return the list of webhooks/ids
     Ignores sheets with invalid format
     '''
     sheets = client.openall()
+
     result = []
     for sheet in sheets:
         sheet_data = {
             'id': sheet.id
         }
 
-        # Ensure there are two worksheets
-        worksheets = sheet.worksheets()
-        if len(worksheets) != 2:
-            continue
-        
         # Get webhooks, filter out invalid links
-        webhooks = worksheets[0].col_values(1)
-        sheet_data['webhooks'] = [w for w in webhooks if 'https://discord.com/api/webhooks/' in w]
+        try:
+            webhooks = sheet.get_worksheet(0).col_values(1)
+            sheet_data['webhooks'] = [w for w in webhooks if WEBHOOK_LINK in w]
+        except gspread.WorksheetNotFound:
+            print("No 'webhooks' sheet in", sheet.id)
+            continue
 
         # Get manga IDs, filter out invalid formats
-        ids = worksheets[1].col_values(1)
-        sheet_data['ids'] = [i for i in ids if re.fullmatch(REGEX, i)]
+        try:
+            ids = sheet.get_worksheet(1).col_values(1)
+            sheet_data['ids'] = [i for i in ids if re.fullmatch(REGEX, i)]
+        except gspread.WorksheetNotFound:
+            print("No 'manga' sheet in", sheet.id)
+            continue
 
         result.append(sheet_data)
 
