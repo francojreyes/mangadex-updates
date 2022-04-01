@@ -24,7 +24,10 @@ def check_updates():
     Get and send all manga updates
     '''
     # Read data from google sheets
+    s = time.perf_counter()
     sheets = sheet_reader.get_sheets()
+    elapsed = time.perf_counter() - s
+    print(f"sheet read executed in {elapsed:0.2f} seconds.")
 
     # Determine time of last check
     last_check = datetime.now() - timedelta(hours=INTERVAL + 11)
