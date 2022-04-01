@@ -1,6 +1,8 @@
 # Discord webhook for Mangadex chapter updates
 A script that uses Mangadex's v5 API to automatically forward chapter updates to Discord webhooks.
 
+![](steps/example.png)
+
 Very simple to setup, no downloads required, simply create a Google Sheet and share it with the bot.
 
 # Setup
