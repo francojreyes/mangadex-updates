@@ -47,7 +47,7 @@ def check_updates():
         manga_id = get_manga_id(chapter)
         webhooks = list(itertools.chain(*[s['webhooks'] for s in sheets if manga_id in s['ids']]))
         if len(webhooks) == 0:
-            print('No sheets containing', manga_id)
+            print('No sheets containing manga of', chapter['id'])
             continue
 
         # Create the embed
