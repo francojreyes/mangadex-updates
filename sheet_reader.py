@@ -52,7 +52,7 @@ def get_sheets():
 
         # Get webhooks, filter out invalid links
         try:
-            webhooks = sheet.get_worksheet(0).col_values(1)
+            webhooks = sheet.worksheet('webhooks').col_values(1)
             sheet_data['webhooks'] = [w for w in webhooks if WEBHOOK_LINK in w]
         except gspread.WorksheetNotFound:
             print("No 'webhooks' sheet in", sheet.id)
@@ -60,7 +60,7 @@ def get_sheets():
 
         # Get manga IDs, filter out invalid formats
         try:
-            ids = sheet.get_worksheet(1).col_values(1)
+            ids = sheet.worksheet('manga').col_values(1)
             sheet_data['ids'] = [i for i in ids if re.fullmatch(REGEX, i)]
         except gspread.WorksheetNotFound:
             print("No 'manga' sheet in", sheet.id)
