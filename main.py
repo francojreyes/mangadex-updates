@@ -60,9 +60,9 @@ def check_updates():
             webhook = DiscordWebhook(
                 url=webhook,
                 username='MangaDex',
-                avatar_url=MANGADEX_LOGO
+                avatar_url=MANGADEX_LOGO,
+                embeds=[embed]
             )
-            webhook.add_embed(embed)
 
             try:
                 webhook.execute()
@@ -105,7 +105,7 @@ def create_embed(manga, chapter):
     '''
     # Get manga data
     manga_url = 'https://mangadex.org/title/' + manga['id']
-    title = get_title(manga)
+    manga_title = get_title(manga)
 
     # Get chapter data
     chapter_url = get_chapter_url(chapter)
@@ -115,14 +115,14 @@ def create_embed(manga, chapter):
 
     # Create the embed
     embed = DiscordEmbed(
-        title=title,
+        color='f69220',
+        title=manga_title,
         url=manga_url,
         description=f"[{description}]({chapter_url})",
-        color='f69220'
+        image=og_image,
+        footer='New chapter available',
+        timestamp=time_posted.timestamp()
     )
-    embed.set_image(url=og_image)
-    embed.set_footer(text='New chapter available')
-    embed.set_timestamp(time_posted.timestamp())
 
     return embed
 
@@ -137,17 +137,23 @@ def get_title(manga):
 def generate_description(chapter):
     '''
     Find volume and chapter numbers.
-    If volume is none, return chapter only.
-    If both none, oneshot.
+    If volume is none, return chapter only. If both none, oneshot.
+    Append title if it exists.
     '''
+    result = ''
+
     attributes = chapter['attributes']
     if attributes['volume']:
-        return f"Volume {attributes['volume']}, Chapter {attributes['chapter']}"
+        result += f"Volume {attributes['volume']}, Chapter {attributes['chapter']}"
+    elif attributes['chapter']:
+        result += f"Chapter {attributes['chapter']}"
+    else:
+        result += "Oneshot"
 
-    if attributes['chapter']:
-        return f"Chapter {attributes['chapter']}"
+    if attributes['title']:
+        result += f" - {attributes['title']}"
 
-    return "Oneshot"
+    return result
 
 
 def get_manga_id(chapter):
