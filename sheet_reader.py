@@ -9,8 +9,8 @@ from google.oauth2.service_account import Credentials
 from dotenv import load_dotenv
 
 # defines
-SCOPE = ['https://spreadsheets.google.com/feeds',
-         'https://www.googleapis.com/auth/drive']
+SCOPE = ['https://www.googleapis.com/auth/spreadsheets.readonly',
+         'https://www.googleapis.com/auth/drive.readonly']
 REGEX = r'[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}'
 WEBHOOK_LINK = 'https://discord.com/api/webhooks/'
 
