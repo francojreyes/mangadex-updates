@@ -30,7 +30,7 @@ def check_updates():
     print(f"sheet read executed in {elapsed:0.2f} seconds.")
 
     # Determine time of last check
-    last_check = datetime.now() - timedelta(hours=INTERVAL + 11)
+    last_check = datetime.now() - timedelta(hours=INTERVAL)
     last_check_str = last_check.strftime("%Y-%m-%dT%H:%M:%S")
     print("Checking since", last_check_str)
 
