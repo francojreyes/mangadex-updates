@@ -45,27 +45,34 @@ def check_updates():
         # Gather webhooks for all sheets containing this chapter
         # If none exist, continue
         manga_id = get_manga_id(chapter)
-        webhooks = list(itertools.chain(*[s['webhooks'] for s in sheets if manga_id in s['ids']]))
+        webhooks = list(itertools.chain(
+            *[sheet['webhooks'] for sheet in sheets if manga_id in sheet['ids']]))
         if len(webhooks) == 0:
             print('No sheets containing manga of', chapter['id'])
             continue
 
         # Create the embed
         manga = request_manga(manga_id)
-        embed = create_embed(manga, chapter)
+        embed = DiscordEmbed(
+            color='f69220',
+            title=list(manga['attributes']['title'].values())[0],
+            url='https://mangadex.org/title/' + manga['id'],
+            description=f"[{generate_description(chapter)}]({get_chapter_url(chapter)})",
+            image='https://og.mangadex.org/og-image/chapter/' + chapter['id'],
+            footer='New chapter available',
+            timestamp=get_time_posted(chapter).timestamp()
+        )
 
         # Send the embed to each webhook
         print('Sending webhooks for', chapter['id'])
         for webhook in webhooks:
-            webhook = DiscordWebhook(
-                url=webhook,
-                username='MangaDex',
-                avatar_url=MANGADEX_LOGO,
-                embeds=[embed]
-            )
-
             try:
-                webhook.execute()
+                DiscordWebhook(
+                    url=webhook,
+                    username='MangaDex',
+                    avatar_url=MANGADEX_LOGO,
+                    embeds=[embed]
+                ).execute()
             except:
                 traceback.print_exc()
 
@@ -84,10 +91,11 @@ def request_chapters(last_check_str):
     chapters = []
     while True:
         try:
-            response = requests.get(f'{API_URL}chapter', params=query_params).json()
+            response = requests.get(
+                f'{API_URL}chapter', params=query_params).json()
         except:
             traceback.print_exc()
-            return
+            break
         chapters += response['data']
 
         # If no more chapters
@@ -96,35 +104,7 @@ def request_chapters(last_check_str):
 
         query_params['offset'] += response['limit']
 
-    return chapters     
-
-
-def create_embed(manga, chapter):
-    '''
-    Create an embed for the given chapter of manga
-    '''
-    # Get manga data
-    manga_url = 'https://mangadex.org/title/' + manga['id']
-    manga_title = list(manga['attributes']['title'].values())[0]
-
-    # Get chapter data
-    chapter_url = get_chapter_url(chapter)
-    description = generate_description(chapter)
-    og_image = 'https://og.mangadex.org/og-image/chapter/' + chapter['id']
-    time_posted = get_time_posted(chapter)
-
-    # Create the embed
-    embed = DiscordEmbed(
-        color='f69220',
-        title=manga_title,
-        url=manga_url,
-        description=f"[{description}]({chapter_url})",
-        image=og_image,
-        footer='New chapter available',
-        timestamp=time_posted.timestamp()
-    )
-
-    return embed
+    return chapters
 
 
 def generate_description(chapter):
