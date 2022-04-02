@@ -27,7 +27,7 @@ def check_updates():
     s = time.perf_counter()
     sheets = sheet_reader.get_sheets()
     elapsed = time.perf_counter() - s
-    print(f"sheet read executed in {elapsed:0.2f} seconds.")
+    print(f"Read {len(sheets)} sheets in {elapsed:0.2f} seconds.")
 
     # Determine time of last check
     last_check = datetime.now() - timedelta(hours=INTERVAL)
@@ -54,13 +54,13 @@ def check_updates():
         # Create the embed
         manga = request_manga(manga_id)
         embed = DiscordEmbed(
-            color='f69220',
+            hcolor='f69220',
             title=list(manga['attributes']['title'].values())[0],
             url='https://mangadex.org/title/' + manga['id'],
             description=f"[{generate_description(chapter)}]({get_chapter_url(chapter)})",
-            image='https://og.mangadex.org/og-image/chapter/' + chapter['id'],
-            footer='New chapter available',
-            timestamp=get_time_posted(chapter).timestamp()
+            image={'url': 'https://og.mangadex.org/og-image/chapter/' + chapter['id']},
+            footer={'text': 'New chapter available'},
+            timestamp=get_time_posted(chapter).isoformat()
         )
 
         # Send the embed to each webhook
