@@ -31,7 +31,7 @@ def check_updates():
 
     # Determine time of last check
     last_check = datetime.now() - timedelta(hours=INTERVAL)
-    last_check_str = last_check.strftime("%Y-%m-%dT%H:%M:%S")
+    last_check_str = last_check.isoformat(timespec='seconds')
     print("Checking since", last_check_str)
 
     # Get all English chapters updated since last check
