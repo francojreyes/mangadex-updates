@@ -38,7 +38,8 @@ def check_updates():
     chapters = request_chapters(last_check_str)
     for chapter in chapters:
         # Ensure chapter is actually new
-        if get_time_posted(chapter) < last_check:
+        time_posted = get_time_posted(chapter)
+        if time_posted < last_check:
             continue
 
         # Gather webhooks for all sheets containing this chapter's manga
@@ -57,7 +58,7 @@ def check_updates():
             description=f"[{generate_description(chapter)}]({get_chapter_url(chapter)})",
             image={'url': 'https://og.mangadex.org/og-image/chapter/' + chapter['id']},
             footer={'text': 'New chapter available'},
-            timestamp=get_time_posted(chapter).isoformat()
+            timestamp=time_posted.isoformat()
         )
 
         # Send the embed to each webhook
@@ -150,10 +151,14 @@ def get_chapter_url(chapter):
 
 def get_time_posted(chapter):
     '''
-    Return datetime object corresponding to time chapter was posted
+    Return datetime object corresponding to time chapter was posted.
     '''
-    return datetime.strptime(
-        chapter['attributes']['readableAt'], '%Y-%m-%dT%H:%M:%S+00:00')
+    if chapter['attributes']['readableAt']:
+        return datetime.strptime(
+            chapter['attributes']['readableAt'], '%Y-%m-%dT%H:%M:%S+00:00')
+    else:
+        return datetime.strptime(
+            chapter['attributes']['createdAt'], '%Y-%m-%dT%H:%M:%S+00:00')
 
 
 if __name__ == '__main__':
