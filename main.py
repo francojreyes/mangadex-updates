@@ -30,28 +30,23 @@ def check_updates():
     print(f"Read {len(sheets)} sheets in {elapsed:0.2f} seconds.")
 
     # Determine time of last check
-    last_check = datetime.now() - timedelta(hours=INTERVAL+10)
+    last_check = datetime.now() - timedelta(hours=INTERVAL)
     last_check_str = last_check.isoformat(timespec='seconds')
     print("Checking since", last_check_str)
 
     # Get all English chapters updated since last check
-    s = time.perf_counter()
     chapters = request_chapters(last_check_str)
-    elapsed = time.perf_counter() - s
-    print(f"Chapters requested in {elapsed:0.2f} seconds.")
     for chapter in chapters:
         # Ensure chapter is actually new
         if get_time_posted(chapter) < last_check:
-            print('No real update for', chapter['id'])
             continue
 
-        # Gather webhooks for all sheets containing this chapter
-        # If none exist, continue
+        # Gather webhooks for all sheets containing this chapter's manga
         manga = get_manga(chapter)
         webhooks = list(itertools.chain(
             *[sheet['webhooks'] for sheet in sheets if manga['id'] in sheet['ids']]))
+        # If none exist, continue
         if len(webhooks) == 0:
-            print('No sheets containing manga of', chapter['id'])
             continue
 
         # Create the embed
@@ -134,7 +129,7 @@ def generate_description(chapter):
 
 def get_manga(chapter):
     '''
-    Get the ID of the manga attached to the given chapter
+    Get the manga related to the given chapter
     '''
     for relationship in chapter['relationships']:
         if relationship['type'] == 'manga':
