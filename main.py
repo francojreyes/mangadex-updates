@@ -30,7 +30,7 @@ def check_updates():
     print(f"Read {len(sheets)} sheets in {elapsed:0.2f} seconds.")
 
     # Determine time of last check
-    last_check = datetime.now() - timedelta(hours=INTERVAL)
+    last_check = datetime.now() - timedelta(hours=INTERVAL+10)
     last_check_str = last_check.isoformat(timespec='seconds')
     print("Checking since", last_check_str)
 
@@ -65,16 +65,15 @@ def check_updates():
 
         # Send the embed to each webhook
         print('Sending webhooks for', chapter['id'])
-        for webhook in webhooks:
-            try:
-                DiscordWebhook(
-                    url=webhook,
-                    username='MangaDex',
-                    avatar_url=MANGADEX_LOGO,
-                    embeds=[embed]
-                ).execute()
-            except:
-                traceback.print_exc()
+        try:
+            DiscordWebhook(
+                url=webhooks,
+                username='MangaDex',
+                avatar_url=MANGADEX_LOGO,
+                embeds=[embed]
+            ).execute()
+        except:
+            traceback.print_exc()
 
 
 def request_chapters(last_check_str):
