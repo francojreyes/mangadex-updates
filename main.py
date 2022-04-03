@@ -30,12 +30,15 @@ def check_updates():
     print(f"Read {len(sheets)} sheets in {elapsed:0.2f} seconds.")
 
     # Determine time of last check
-    last_check = datetime.now() - timedelta(hours=INTERVAL)
+    last_check = datetime.now() - timedelta(hours=INTERVAL+10)
     last_check_str = last_check.isoformat(timespec='seconds')
     print("Checking since", last_check_str)
 
     # Get all English chapters updated since last check
+    s = time.perf_counter()
     chapters = request_chapters(last_check_str)
+    elapsed = time.perf_counter() - s
+    print(f"Chapters requested in {elapsed:0.2f} seconds.")
     for chapter in chapters:
         # Ensure chapter is actually new
         if get_time_posted(chapter) < last_check:
@@ -44,15 +47,14 @@ def check_updates():
 
         # Gather webhooks for all sheets containing this chapter
         # If none exist, continue
-        manga_id = get_manga_id(chapter)
+        manga = get_manga(chapter)
         webhooks = list(itertools.chain(
-            *[sheet['webhooks'] for sheet in sheets if manga_id in sheet['ids']]))
+            *[sheet['webhooks'] for sheet in sheets if manga['id'] in sheet['ids']]))
         if len(webhooks) == 0:
             print('No sheets containing manga of', chapter['id'])
             continue
 
         # Create the embed
-        manga = request_manga(manga_id)
         embed = DiscordEmbed(
             hcolor='f69220',
             title=list(manga['attributes']['title'].values())[0],
@@ -85,6 +87,7 @@ def request_chapters(last_check_str):
         'offset': 0,
         'updatedAtSince': last_check_str,
         'translatedLanguage[0]': 'en',
+        'includes[0]': 'manga',
     }
 
     chapters = []
@@ -92,6 +95,7 @@ def request_chapters(last_check_str):
         try:
             response = requests.get(
                 f'{API_URL}chapter', params=query_params).json()
+            time.sleep(1/5)
         except:
             traceback.print_exc()
             break
@@ -128,27 +132,15 @@ def generate_description(chapter):
     return result
 
 
-def get_manga_id(chapter):
+def get_manga(chapter):
     '''
     Get the ID of the manga attached to the given chapter
     '''
     for relationship in chapter['relationships']:
         if relationship['type'] == 'manga':
-            return relationship['id']
+            return relationship
 
     return None
-
-
-def request_manga(manga_id):
-    '''
-    Request the manga with the given ID
-    '''
-    try:
-        response = requests.get(f"{API_URL}manga/{manga_id}")
-        return response.json()['data']
-    except:
-        traceback.print_exc()
-        return None
 
 
 def get_chapter_url(chapter):
