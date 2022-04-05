@@ -42,7 +42,10 @@ def get_sheets():
     Scan all sheets and return the list of webhooks/ids
     Ignores sheets with invalid format
     '''
-    sheets = client.openall()
+    try:
+        sheets = client.openall()
+    except gspread.exceptions.APIError as e:
+        print("Error occured while obtaining sheets:", e)
 
     result = []
     for sheet in sheets:
