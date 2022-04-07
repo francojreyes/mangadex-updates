@@ -46,6 +46,7 @@ def get_sheets():
         sheets = client.openall()
     except gspread.exceptions.APIError as e:
         print("Error occured while obtaining sheets:", e)
+        sheets = []
 
     result = []
     for sheet in sheets:
