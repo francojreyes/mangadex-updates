@@ -171,6 +171,4 @@ def get_time_posted(chapter):
 
 
 if __name__ == '__main__':
-    while True:
-        check_updates()
-        time.sleep(3600 * INTERVAL)
+    check_updates()
