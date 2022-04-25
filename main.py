@@ -27,8 +27,6 @@ def check_updates():
     elapsed = time.perf_counter() - s
     print(f"Read {len(sheets)} sheets in {elapsed:0.2f} seconds.")
 
-    
-
     # Get all English chapters updated since last check
     last_check_dt = datetime.fromisoformat(last_check_str)
     chapters = request_chapters(last_check_str)
@@ -160,4 +158,5 @@ def get_time_posted(chapter):
 
 
 if __name__ == '__main__':
+    print('Checking since', last_check_str)
     check_updates()
