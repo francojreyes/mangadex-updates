@@ -2,22 +2,19 @@
 Main file that makes requests to mangadex API and sends embeds to webhook
 '''
 import itertools
-import json
 import time
 import traceback
-from datetime import datetime, timedelta
+from datetime import datetime
 
 import requests
-from discord_webhook import DiscordWebhook, DiscordEmbed
+from discord_webhook import DiscordEmbed, DiscordWebhook
 
 import sheet_reader
+from get_time import last_check_str
 
 # Important URLs
 API_URL = 'https://api.mangadex.org/'
 MANGADEX_LOGO = 'https://pbs.twimg.com/profile_images/1391016345714757632/xbt_jW78_400x400.jpg'
-
-# Time between each check (in hours)
-INTERVAL = 1
 
 
 def check_updates():
@@ -30,19 +27,10 @@ def check_updates():
     elapsed = time.perf_counter() - s
     print(f"Read {len(sheets)} sheets in {elapsed:0.2f} seconds.")
 
-    # Determine time of last check
-    with open('last_check.json', 'r') as f:
-        last_check_str = json.load(f)['last_check_str']
-    print("Checking since", last_check_str)
-    last_check_dt = datetime.fromisoformat(last_check_str)
-
-    # Save now as last time checked
-    with open('last_check.json', 'w') as f:
-        json.dump({
-            'last_check_str': datetime.now().isoformat(timespec='seconds')
-        }, f)
+    
 
     # Get all English chapters updated since last check
+    last_check_dt = datetime.fromisoformat(last_check_str)
     chapters = request_chapters(last_check_str)
     for chapter in chapters:
         # Ensure chapter is actually new
