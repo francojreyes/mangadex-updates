@@ -2,6 +2,7 @@
 Main file that makes requests to mangadex API and sends embeds to webhook
 '''
 import itertools
+import json
 import time
 import traceback
 from datetime import datetime, timedelta
@@ -30,16 +31,22 @@ def check_updates():
     print(f"Read {len(sheets)} sheets in {elapsed:0.2f} seconds.")
 
     # Determine time of last check
-    last_check = datetime.now() - timedelta(hours=INTERVAL)
-    last_check_str = last_check.isoformat(timespec='seconds')
+    with open('last_check.json', 'r') as f:
+        last_check_str = json.load(f)['last_check_str']
     print("Checking since", last_check_str)
+    last_check_dt = datetime.fromisoformat(last_check_str)
+
+    # Save now as last time checked
+    with open('last_check.json', 'w') as f:
+        json.dump({
+            'last_check_str': datetime.now().isoformat(timespec='seconds')
+        }, f)
 
     # Get all English chapters updated since last check
     chapters = request_chapters(last_check_str)
     for chapter in chapters:
         # Ensure chapter is actually new
-        time_posted = get_time_posted(chapter)
-        if time_posted < last_check:
+        if get_time_posted(chapter) < last_check_dt:
             continue
 
         # Gather webhooks for all sheets containing this chapter's manga
@@ -72,6 +79,8 @@ def check_updates():
             ).execute()
         except:
             traceback.print_exc()
+
+
 
 
 def request_chapters(last_check_str):
