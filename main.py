@@ -46,7 +46,8 @@ def check_updates():
     chapters = request_chapters(last_check_str)
     for chapter in chapters:
         # Ensure chapter is actually new
-        if get_time_posted(chapter) < last_check_dt:
+        time_posted = get_time_posted(chapter)
+        if time_posted < last_check_dt:
             continue
 
         # Gather webhooks for all sheets containing this chapter's manga
