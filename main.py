@@ -158,5 +158,6 @@ def get_time_posted(chapter):
 
 
 if __name__ == '__main__':
-    print('Checking since', last_check_str)
-    check_updates()
+    if last_check_str:
+        print('Checking since', last_check_str)
+        check_updates()
