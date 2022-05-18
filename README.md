@@ -1,4 +1,4 @@
-# Discord webhook for Mangadex chapter updates
+# Mangadex Updates Webhook
 A bot that uses Mangadex's v5 API to automatically forward chapter updates to Discord webhooks.
 
 ![](steps/example.png)
