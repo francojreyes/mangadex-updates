@@ -2,5 +2,6 @@ google-auth==2.6.2
 gspread==5.2.0
 requests==2.27.1
 discord_webhook==0.15.0
+pymongo==4.1.1
+pymongo[srv]
 python-dotenv==0.20.0
-PyGitHub==1.55
