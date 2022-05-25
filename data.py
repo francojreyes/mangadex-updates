@@ -1,12 +1,15 @@
 '''
-Reads whitelisted manga ID's and webhooks from google sheets
+Functions to read manga/webhook data and read/write time data
 '''
-import re
 import os
+import re
+from datetime import datetime
 
 import gspread
-from google.oauth2.service_account import Credentials
 from dotenv import load_dotenv
+from google.oauth2.service_account import Credentials
+from pymongo import MongoClient
+from pymongo.server_api import ServerApi
 
 # defines
 SCOPE = ['https://www.googleapis.com/auth/spreadsheets.readonly',
@@ -34,19 +37,18 @@ creds = Credentials.from_service_account_info(
     service_account_info, scopes=SCOPE)
 
 # authorize the clientsheet
-client = gspread.authorize(creds)
+gclient = gspread.authorize(creds)
 
+# connect to mongodb
+mclient = MongoClient(os.getenv('MONGODB_URL'), server_api=ServerApi('1'))
+db = mclient.mangadex
 
 def get_sheets():
     '''
     Scan all sheets and return the list of webhooks/ids
     Ignores sheets with invalid format
     '''
-    try:
-        sheets = client.openall()
-    except gspread.exceptions.APIError as e:
-        print("Error occured while obtaining sheets:", e)
-        sheets = []
+    sheets = gclient.openall()
 
     result = []
     for sheet in sheets:
@@ -73,3 +75,23 @@ def get_sheets():
         result.append(sheet_data)
 
     return result
+
+
+def get_time():
+    '''
+    Get last check time
+    '''
+    return db.last_check.find_one(
+        {'_id': 0},
+        {'time': True, '_id': False}
+    )['time']
+
+
+def set_time():
+    '''
+    Set last check time to now
+    '''
+    db.last_check.find_one_and_update(
+        {'_id': 0},
+        {'$set': {'time': datetime.now().isoformat(timespec='seconds')}}
+    )

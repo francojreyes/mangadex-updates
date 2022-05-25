@@ -9,8 +9,7 @@ from datetime import datetime
 import requests
 from discord_webhook import DiscordEmbed, DiscordWebhook
 
-import sheet_reader
-from get_time import last_check_str
+import data
 
 # Important URLs
 API_URL = 'https://api.mangadex.org/'
@@ -23,11 +22,13 @@ def check_updates():
     '''
     # Read data from google sheets
     s = time.perf_counter()
-    sheets = sheet_reader.get_sheets()
+    sheets = data.get_sheets()
     elapsed = time.perf_counter() - s
     print(f"Read {len(sheets)} sheets in {elapsed:0.2f} seconds.")
 
     # Get all English chapters updated since last check
+    last_check_str = data.get_time()
+    print('Checking since', last_check_str)
     last_check_dt = datetime.fromisoformat(last_check_str)
     chapters = request_chapters(last_check_str)
     for chapter in chapters:
@@ -57,17 +58,12 @@ def check_updates():
 
         # Send the embed to each webhook
         print('Sending webhooks for', chapter['id'])
-        try:
-            DiscordWebhook(
-                url=webhooks,
-                username='MangaDex',
-                avatar_url=MANGADEX_LOGO,
-                embeds=[embed]
-            ).execute()
-        except:
-            traceback.print_exc()
-
-
+        DiscordWebhook(
+            url=webhooks,
+            username='MangaDex',
+            avatar_url=MANGADEX_LOGO,
+            embeds=[embed]
+        ).execute()
 
 
 def request_chapters(last_check_str):
@@ -84,13 +80,9 @@ def request_chapters(last_check_str):
 
     chapters = []
     while True:
-        try:
-            response = requests.get(
-                f'{API_URL}chapter', params=query_params).json()
-            time.sleep(1/5)
-        except:
-            traceback.print_exc()
-            break
+        response = requests.get(
+            f'{API_URL}chapter', params=query_params).json()
+        time.sleep(1/5)
         chapters += response['data']
 
         # If no more chapters
@@ -158,6 +150,4 @@ def get_time_posted(chapter):
 
 
 if __name__ == '__main__':
-    if last_check_str:
-        print('Checking since', last_check_str)
-        check_updates()
+    check_updates()
