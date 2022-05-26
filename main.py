@@ -58,12 +58,15 @@ def check_updates():
 
         # Send the embed to each webhook
         print('Sending webhooks for', chapter['id'])
-        DiscordWebhook(
-            url=webhooks,
-            username='MangaDex',
-            avatar_url=MANGADEX_LOGO,
-            embeds=[embed]
-        ).execute()
+        try:
+            DiscordWebhook(
+                url=webhooks,
+                username='MangaDex',
+                avatar_url=MANGADEX_LOGO,
+                embeds=[embed]
+            ).execute()
+        except:
+            traceback.print_exc()
 
 
 def request_chapters(last_check_str):
@@ -151,3 +154,4 @@ def get_time_posted(chapter):
 
 if __name__ == '__main__':
     check_updates()
+    data.set_time()
