@@ -3,6 +3,7 @@ Functions to read manga/webhook data and read/write time data
 '''
 import os
 import re
+import time
 from datetime import datetime
 
 import gspread
@@ -48,7 +49,12 @@ def get_sheets():
     Scan all sheets and return the list of webhooks/ids
     Ignores sheets with invalid format
     '''
-    sheets = gclient.openall()
+    while True:
+        try:
+            sheets = gclient.openall()
+            break
+        except gspread.exceptions.APIError:
+            time.sleep(1)
 
     result = []
     for sheet in sheets:
