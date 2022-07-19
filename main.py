@@ -14,7 +14,7 @@ import data
 # Important URLs
 API_URL = 'https://api.mangadex.org/'
 MANGADEX_LOGO = 'https://pbs.twimg.com/profile_images/1391016345714757632/xbt_jW78_400x400.jpg'
-
+LOGO = 'https://raw.githubusercontent.com/francojreyes/mangadex-updates/master/icon.png'
 
 def check_updates():
     '''
@@ -62,7 +62,7 @@ def check_updates():
             DiscordWebhook(
                 url=webhooks,
                 username='MangaDex',
-                avatar_url=MANGADEX_LOGO,
+                avatar_url=LOGO,
                 embeds=[embed]
             ).execute()
         except:
