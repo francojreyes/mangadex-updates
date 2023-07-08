@@ -1,6 +1,6 @@
-'''
+"""
 Functions to read manga/webhook data and read/write time data
-'''
+"""
 import os
 import re
 import time
@@ -44,11 +44,12 @@ gclient = gspread.authorize(creds)
 mclient = MongoClient(os.getenv('MONGODB_URL'), server_api=ServerApi('1'))
 db = mclient.mangadex
 
+
 def get_sheets():
-    '''
+    """
     Scan all sheets and return the list of webhooks/ids
     Ignores sheets with invalid format
-    '''
+    """
     while True:
         try:
             sheets = gclient.openall()
@@ -84,9 +85,9 @@ def get_sheets():
 
 
 def get_time():
-    '''
+    """
     Get last check time
-    '''
+    """
     return db.last_check.find_one(
         {'_id': 0},
         {'time': True, '_id': False}
@@ -94,9 +95,9 @@ def get_time():
 
 
 def set_time():
-    '''
+    """
     Set last check time to now
-    '''
+    """
     db.last_check.find_one_and_update(
         {'_id': 0},
         {'$set': {'time': datetime.now().isoformat(timespec='seconds')}}

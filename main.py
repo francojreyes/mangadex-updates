@@ -1,6 +1,6 @@
-'''
+"""
 Main file that makes requests to mangadex API and sends embeds to webhook
-'''
+"""
 import itertools
 import time
 import traceback
@@ -17,10 +17,10 @@ MANGADEX_LOGO = 'https://pbs.twimg.com/profile_images/1391016345714757632/xbt_jW
 
 
 def check_updates():
-    '''
+    """
     Get and send all manga updates
-    '''
-    # Read data from google sheets
+    """
+    # Read data from Google sheets
     s = time.perf_counter()
     sheets = data.get_sheets()
     elapsed = time.perf_counter() - s
@@ -70,9 +70,9 @@ def check_updates():
 
 
 def request_chapters(last_check_str):
-    '''
+    """
     Request all English chapters updated since last_check
-    '''
+    """
     query_params = {
         'limit': 100,
         'offset': 0,
@@ -98,11 +98,11 @@ def request_chapters(last_check_str):
 
 
 def generate_description(chapter):
-    '''
+    """
     Find volume and chapter numbers.
     If volume is none, return chapter only. If both none, oneshot.
     Append title if it exists.
-    '''
+    """
     result = ''
 
     attributes = chapter['attributes']
@@ -120,9 +120,9 @@ def generate_description(chapter):
 
 
 def get_manga(chapter):
-    '''
+    """
     Get the manga related to the given chapter
-    '''
+    """
     for relationship in chapter['relationships']:
         if relationship['type'] == 'manga':
             return relationship
@@ -131,9 +131,9 @@ def get_manga(chapter):
 
 
 def get_chapter_url(chapter):
-    '''
+    """
     Return external URL if exists, or mangadex url otherwise
-    '''
+    """
     if chapter['attributes']['externalUrl']:
         return chapter['attributes']['externalUrl']
 
@@ -141,9 +141,9 @@ def get_chapter_url(chapter):
 
 
 def get_time_posted(chapter):
-    '''
+    """
     Return datetime object corresponding to time chapter was posted.
-    '''
+    """
     if chapter['attributes']['readableAt']:
         return datetime.strptime(
             chapter['attributes']['readableAt'], '%Y-%m-%dT%H:%M:%S+00:00')
