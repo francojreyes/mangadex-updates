@@ -58,7 +58,7 @@ The final step is to give the script access to your Google Sheet.
 
 ### Done!
 The script will now send any updates for manga in your `manga` sheet to any webhooks in your `webhooks` sheet! Note this process is run every hour, and there will be nothing sent if no updates are found.
-If you are having any trouble, or would like to request a featutre, you can contact me on Discord at `@marsh#0943`.
+If you are having any trouble, or would like to request a feature, you can contact me on Discord at `@marshdapro`.
 
 # Planned Features
 - Support for MDLists
