@@ -3,9 +3,9 @@ Functions to read manga/webhook data and read/write time data
 """
 import os
 import re
-import time
 from datetime import datetime
 
+import backoff
 import gspread
 from dotenv import load_dotenv
 from google.oauth2.service_account import Credentials
@@ -45,17 +45,22 @@ mclient = MongoClient(os.getenv('MONGODB_URL'), server_api=ServerApi('1'))
 db = mclient.mangadex
 
 
+@backoff.on_exception(backoff.fibo, gspread.exceptions.APIError)
+def open_all_sheets():
+    return gclient.openall()
+
+
+@backoff.on_exception(backoff.fibo, gspread.exceptions.APIError)
+def read_worksheet(sheet: gspread.Spreadsheet, worksheet_name: str):
+    return sheet.worksheet(worksheet_name).col_values(1)
+
+
 def get_sheets():
     """
     Scan all sheets and return the list of webhooks/ids
     Ignores sheets with invalid format
     """
-    while True:
-        try:
-            sheets = gclient.openall()
-            break
-        except gspread.exceptions.APIError:
-            time.sleep(1)
+    sheets = open_all_sheets()
 
     result = []
     for sheet in sheets:
@@ -65,7 +70,7 @@ def get_sheets():
 
         # Get webhooks, filter out invalid links
         try:
-            webhooks = sheet.worksheet('webhooks').col_values(1)
+            webhooks = read_worksheet(sheet, 'webhooks')
             sheet_data['webhooks'] = [w for w in webhooks if WEBHOOK_LINK in w]
         except gspread.WorksheetNotFound:
             print("No 'webhooks' sheet in", sheet.id)
@@ -73,7 +78,7 @@ def get_sheets():
 
         # Get manga IDs, filter out invalid formats
         try:
-            ids = sheet.worksheet('manga').col_values(1)
+            ids = read_worksheet(sheet, 'manga')
             sheet_data['ids'] = [i for i in ids if re.fullmatch(REGEX, i)]
         except gspread.WorksheetNotFound:
             print("No 'manga' sheet in", sheet.id)
