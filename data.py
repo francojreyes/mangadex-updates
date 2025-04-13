@@ -15,7 +15,8 @@ from pymongo.server_api import ServerApi
 # defines
 SCOPE = ['https://www.googleapis.com/auth/spreadsheets.readonly',
          'https://www.googleapis.com/auth/drive.readonly']
-REGEX = r'[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}'
+ID_REGEX = r'[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}'
+LANG_REGEX = r'^[a-z]{2}(-[a-z]{2})?$'
 WEBHOOK_LINK = 'https://discord.com/api/webhooks/'
 
 # read credentials from environment
@@ -51,8 +52,8 @@ def open_all_sheets():
 
 
 @backoff.on_exception(backoff.fibo, gspread.exceptions.APIError)
-def read_worksheet(sheet: gspread.Spreadsheet, worksheet_name: str):
-    return sheet.worksheet(worksheet_name).col_values(1)
+def read_worksheet(sheet: gspread.Spreadsheet, worksheet_name: str, range_name: str) -> list[list[str]]:
+    return sheet.worksheet(worksheet_name).get_values(range_name)
 
 
 def get_sheets():
@@ -70,16 +71,22 @@ def get_sheets():
 
         # Get webhooks, filter out invalid links
         try:
-            webhooks = read_worksheet(sheet, 'webhooks')
-            sheet_data['webhooks'] = [w for w in webhooks if WEBHOOK_LINK in w]
+            webhooks = read_worksheet(sheet, 'webhooks', "A:A")
+            sheet_data['webhooks'] = [w[0] for w in webhooks if WEBHOOK_LINK in w]
         except gspread.WorksheetNotFound:
             print("No 'webhooks' sheet in", sheet.id)
             continue
 
         # Get manga IDs, filter out invalid formats
         try:
-            ids = read_worksheet(sheet, 'manga')
-            sheet_data['ids'] = [i for i in ids if re.fullmatch(REGEX, i)]
+            rows = read_worksheet(sheet, 'manga', "A:B")
+            sheet_data['manga'] = {}
+            for row in rows:
+                if not re.fullmatch(ID_REGEX, row[0]):
+                    continue
+                languages = row[1] if len(row) >= 2 and row[1] else "en"
+                sheet_data['manga'][row[0]] = [lang for lang in re.split("\s*,\s*", languages) if
+                                               re.fullmatch(LANG_REGEX, lang)]
         except gspread.WorksheetNotFound:
             print("No 'manga' sheet in", sheet.id)
             continue
