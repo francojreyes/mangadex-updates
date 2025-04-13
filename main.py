@@ -71,7 +71,8 @@ def check_updates():
                 url=webhooks,
                 username='MangaDex',
                 avatar_url=LOGO,
-                embeds=[embed]
+                embeds=[embed],
+                rate_limit_retry=True
             ).execute()
         except:
             traceback.print_exc()
