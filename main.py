@@ -65,7 +65,7 @@ def check_updates():
         )
 
         # Send the embed to each webhook
-        print('Sending webhooks for', chapter['id'])
+        print(f"Sending {len(webhooks)} webhooks for {embed.description}")
         try:
             DiscordWebhook(
                 url=webhooks,
@@ -104,7 +104,7 @@ def request_chapters(last_check_str):
         query_params['offset'] += response['limit']
 
     elapsed = time.perf_counter() - s
-    print(f"Read {len(chapters)} sheets in {elapsed:0.2f} seconds.")
+    print(f"Read {len(chapters)} chapters in {elapsed:0.2f} seconds.")
     return chapters
 
 
