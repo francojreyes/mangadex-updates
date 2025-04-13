@@ -72,7 +72,7 @@ def get_sheets():
         # Get webhooks, filter out invalid links
         try:
             webhooks = read_worksheet(sheet, 'webhooks', "A:A")
-            sheet_data['webhooks'] = [w[0] for w in webhooks if WEBHOOK_LINK in w]
+            sheet_data['webhooks'] = [w[0] for w in webhooks if WEBHOOK_LINK in w[0]]
         except gspread.WorksheetNotFound:
             print("No 'webhooks' sheet in", sheet.id)
             continue

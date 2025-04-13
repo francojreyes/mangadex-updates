@@ -1,7 +1,6 @@
 """
 Main file that makes requests to mangadex API and sends embeds to webhook
 """
-import itertools
 import time
 import traceback
 from collections import defaultdict
@@ -89,6 +88,7 @@ def request_chapters(last_check_str):
         'includes[0]': 'manga',
     }
 
+    s = time.perf_counter()
     chapters = []
     while True:
         response = requests.get(
@@ -102,6 +102,8 @@ def request_chapters(last_check_str):
 
         query_params['offset'] += response['limit']
 
+    elapsed = time.perf_counter() - s
+    print(f"Read {len(chapters)} sheets in {elapsed:0.2f} seconds.")
     return chapters
 
 
