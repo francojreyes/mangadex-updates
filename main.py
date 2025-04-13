@@ -4,6 +4,7 @@ Main file that makes requests to mangadex API and sends embeds to webhook
 import itertools
 import time
 import traceback
+from collections import defaultdict
 from datetime import datetime
 
 import requests
@@ -26,6 +27,13 @@ def check_updates():
     elapsed = time.perf_counter() - s
     print(f"Read {len(sheets)} sheets in {elapsed:0.2f} seconds.")
 
+    # Group webhooks by (manga, lang)
+    webhook_map = defaultdict(list)
+    for sheet in sheets:
+        for manga, langs in sheet["manga"].items():
+            for lang in langs:
+                webhook_map[(manga, lang)].extend(sheet["webhooks"])
+
     # Get all English chapters updated since last check
     last_check_str = data.get_time()
     print('Checking since', last_check_str)
@@ -39,8 +47,9 @@ def check_updates():
 
         # Gather webhooks for all sheets containing this chapter's manga
         manga = get_manga(chapter)
-        webhooks = list(itertools.chain(
-            *[sheet['webhooks'] for sheet in sheets if manga['id'] in sheet['ids']]))
+        language = chapter['attributes']['translatedLanguage']
+        webhooks = webhook_map[(manga['id'], language)]
+
         # If none exist, continue
         if len(webhooks) == 0:
             continue
@@ -77,7 +86,6 @@ def request_chapters(last_check_str):
         'limit': 100,
         'offset': 0,
         'updatedAtSince': last_check_str,
-        'translatedLanguage[0]': 'en',
         'includes[0]': 'manga',
     }
 
@@ -103,9 +111,8 @@ def generate_description(chapter):
     If volume is none, return chapter only. If both none, oneshot.
     Append title if it exists.
     """
-    result = ''
-
     attributes = chapter['attributes']
+    result = f"[{attributes['translatedLanguage']}] "
     if attributes['volume']:
         result += f"Volume {attributes['volume']}, Chapter {attributes['chapter']}"
     elif attributes['chapter']:
